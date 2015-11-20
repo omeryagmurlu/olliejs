@@ -1,0 +1,779 @@
+// insgesamt
+
+var events = require('events'),
+	responseParser = require('./response-parser'),
+	commands = require('./commands'),
+	util = require('util'),
+	connection; // Pair, name : connection-not-oop , pair 1, problem: its so dumb
+
+
+var Ollie = module.exports = function(uuid, opts) {
+	var opts = opts || {};
+	this.uuid = uuid;
+	connection  = new (require('./connection'))(this.uuid); // Pair, name : connection-not-oop , pair 2
+}
+
+util.inherits(Ollie, events.EventEmitter);
+
+Ollie.prototype.init = function(callback) {
+	connection.on('connect', function(){
+		devModeOn(function(){
+			this.emit("connect");
+		}.bind(this))
+	}.bind(this))
+
+	//Biraz daha durum olsa kötü mü olur :D
+
+	connection.init(callback);
+};
+
+var ollo = new Ollie("ef66143e996d")
+
+ollo.on("connect", function(){
+
+})
+
+ollo.init()
+
+// Bundan aşşağ driver.js olcak
+
+var OllieBLEService = "22bb746f2bb075542d6f726568705327",
+	WakeMainProcessor = "22bb746f2bbf75542d6f726568705327",
+	TXPower = "22bb746f2bb275542d6f726568705327",
+	AntiDos = "22bb746f2bbd75542d6f726568705327",
+	OllieRobotControlService = "22bb746f2ba075542d6f726568705327",
+	Roll = "22bb746f2ba175542d6f726568705327",
+	Notify = "22bb746f2ba675542d6f726568705327";
+
+{
+	var wake = function(callback) {
+		connection.writeCharacteristic(
+			OllieBLEService,
+			WakeMainProcessor,
+			1,
+			callback
+		);
+	};
+
+	detectCollisions = function(callback) {
+		var packet = Sphero.commands.api.configureCollisionDetection(0x01, 0x40, 0x40, 0x50, 0x50, 0x50, {resetTimeout: true});
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setTXPower = function(level, callback) {
+		connection.writeCharacteristic(OllieBLEService, TXPower, level, callback);
+	};
+
+	/**
+	 * Sets the RGB color of Ollie's built-in LED
+	 *
+	 * @param {Number} color color value to set
+	 * @param {Boolean} persist whether color should persist through power cycles
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+	setRGB = function(color, persist, callback) {
+		var packet = Sphero.commands.api.setRGB(color, persist, {resetTimeout: true});
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	//ömer
+	setColor = function(color, persist) {
+		if (typeof color === "string") { color = Colors.fromString(color); }
+		return this.setRGB(color, persist);
+	};
+	// ömer
+	setRandomColor = function(persist) {
+		return this.setRGB(Colors.randomColor(), persist);
+	};
+
+	/**
+	 * Tells Ollie to roll in a particular speed and heading
+	 *
+	 * @param {Number} speed speed to roll at
+	 * @param {Number} heading heading to roll at
+	 * @param {Number} state roll state value
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+	roll = function(speed, heading, state, callback) {
+		this.heading = heading;
+
+		var packet = Sphero.commands.api.roll(
+			speed,
+			heading,
+			state,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	// ömer
+	setDataStreaming = function(dataSources, opts, callback) {
+		opts = opts || {};
+
+		var n = opts.n || 80,
+				m = opts.m || 1,
+				pcnt = opts.pcnt || 0;
+
+		dataSources.forEach(function(ds) {
+			if (DATA_SOURCES1[ds]) {
+				this.mask1 = this.mask1 + DATA_SOURCES1[ds];
+			}
+
+			if (DATA_SOURCES2[ds]) {
+				this.mask2 = this.mask2 + DATA_SOURCES2[ds];
+			}
+		}.bind(this));
+		var packet = Sphero.commands.api.setDataStreaming(n, m, this.mask1, pcnt, this.mask2, {resetTimeout: true});
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	/**
+	 * Tells Ollie to stop rolling
+	 *
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+	stop = function(callback) {
+		this.roll(0, this.heading, 1, callback); 
+	};
+
+	/**
+	 * Allows for direct control of both motors, rather than auto-control via the
+	 * stabilization system.
+	 *
+	 * Each motor (left and right) requires a mode (see below) and a power value
+	 * from 0-255. This command will disable stabilization if both modes aren't
+	 * "ignore" so you'll need to re-enable it via setStabilization() once you're
+	 * done.
+	 *
+	 * @param {Number} lm left motor mode
+	 * @param {Number} lp left motor power
+	 * @param {Number} rm right motor mode
+	 * @param {Number} rp right motor power
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+	setRawMotorValues = function(lm, lp, rm, rp, callback) {
+		var packet = Sphero.commands.api.setRawMotorValues(
+			lm, lp,
+			rm, rp,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	/**
+	 * Used to enable/disable Ollie's auto-stabilization
+	 *
+	 * Often used after setting raw motor commands.
+	 *
+	 * @param {Number} enable stabilization enable mode
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+
+	 // ömer büyük ekleyiş başlangıç
+	setRotationRate = function(rate, callback) {
+		var packet = Sphero.commands.api.setRotationRate(
+			rate,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setBackLED = function(intensity, callback) {
+		var packet = Sphero.commands.api.setBackLED(
+			intensity,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setMotionTimeout = function(time, callback) {
+		var packet = Sphero.commands.api.setMotionTimeout(
+			time,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setTemporaryOptionFlags = function(flag, callback) {
+		var packet = Sphero.commands.api.setTemporaryOptionFlags(
+			flag,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getTemporaryOptionFlags = function(callback) {
+		var packet = Sphero.commands.api.getTemporaryOptionFlags(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getPermanentOptionFlags = function(callback) {
+		var packet = Sphero.commands.api.getPermanentOptionFlags(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	runMacro = function(macroID, callback) {
+		var packet = Sphero.commands.api.runMacro(
+			macroID,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	saveTemporaryMacro = function(macro, callback) {
+		var packet = Sphero.commands.api.saveTemporaryMacro(
+			macro,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	savePermanentMacro = function(macro, callback) {
+		var packet = Sphero.commands.api.saveMacro(
+			macro,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	reInitializeMacroExecutive = function(callback) {
+		var packet = Sphero.commands.api.reInitializeMacroExecutive(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	abortMacro = function(callback) {
+		var packet = Sphero.commands.api.abortMacro(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	eraseOrbBasicStorage = function(area, callback) {
+		var packet = Sphero.commands.api.eraseOrbBasicStorage(
+			area,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	appendOrbBasicFragment = function(area, fragment, callback) {
+		var packet = Sphero.commands.api.appendOrbBasicFragment(
+			area,
+			fragment,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	executeOrbBasicProgram = function(area, startLine, callback) {
+		var packet = Sphero.commands.api.executeOrbBasicProgram(
+			area,
+			startLine,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	abortOrbBasicProgram = function(callback) {
+		var packet = Sphero.commands.api.abortOrbBasicProgram(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	submitValueToInputStatement = function(value, callback) {
+		var packet = Sphero.commands.api.submitValueToInputStatement(
+			value,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	// ömer bundan sonrasını (büyük ekleyiş sona kadar olan) ben istediğimden yazmadım
+
+	appendMacroChunck = function(macro, callback) {
+		var packet = Sphero.commands.api.appendMacroChunck(
+			macro,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setMacroParameter = function(parameter, value, callback) {
+		var packet = Sphero.commands.api.setMacroParameter(
+			parameter,
+			value,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getMacroStatus = function(callback) {
+		var packet = Sphero.commands.api.getMacroStatus(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getDeviceMode = function(callback) {
+		var packet = Sphero.commands.api.getDeviceMode(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	// ömer yapilmayan yapılmayan yapmadı setConfigurationBlock tehlikeli olduğundan (heralde)
+
+	// ömer yapilmayan yapılmayan yapmadı setDeviceMode gereksiz olduğundan (heralde)
+
+	// ömer yapilmayan yapılmayan yapmadı setAccelerometerRange gereksiz olduğundan (heralde)
+
+	// ömer yapilmayan yapılmayan yapmadı selfLevel anlamadığından olduğundan (heralde)
+
+	getConfigurationBlock = function(conBlockID, callback) {
+		var packet = Sphero.commands.api.getConfigurationBlock(
+			conBlockID,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getRGB = function(callback) {
+		var packet = Sphero.commands.api.getRGB(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	readLocator = function(callback) {
+		var packet = Sphero.commands.api.readLocator(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	configureLocator = function(flags, x, y, yawTare, callback) {
+		var packet = Sphero.commands.api.configureLocator(
+			flags,
+			x,
+			y,
+			yawTare,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getChassisID = function(callback) {
+		var packet = Sphero.commands.api.getChassisID(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	// gerisi core
+
+	ping = function(callback) {
+		var packet = Sphero.commands.core.ping(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getVersioning = function(callback) {
+		var packet = Sphero.commands.core.getVersioning(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getBluetoothInfo = function(callback) {
+		var packet = Sphero.commands.core.getBluetoothInfo(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setAutoReconnect = function(enable, time, callback) {
+		var packet = Sphero.commands.core.setAutoReconnect(
+			enable,
+			time,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getAutoReconnect = function(callback) {
+		var packet = Sphero.commands.core.getAutoReconnect(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getPowerState = function(callback) {
+		var packet = Sphero.commands.core.getPowerState(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setPowerNotification = function(enable, callback) {
+		var packet = Sphero.commands.core.setPowerNotification(
+			enable,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	sleep = function(wakeup, macro, orbBasic, callback) {
+		var packet = Sphero.commands.core.sleep(
+			wakeup,
+			macro,
+			orbBasic,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	getVoltageTripPoints = function(callback) {
+		var packet = Sphero.commands.core.getVoltageTripPoints(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setInactivityTimeout = function(time, callback) {
+		var packet = Sphero.commands.core.setInactivityTimeout(
+			time,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	performLevel1Diagnostics = function(callback) {
+		var packet = Sphero.commands.core.performLevel1Diagnostics(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	performLevel2Diagnostics = function(callback) {
+		var packet = Sphero.commands.core.performLevel1Diagnostics(
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	// ömer büyük ekleyiş son
+
+	setHeading = function(num, callback) {
+		var packet = Sphero.commands.api.setHeading(
+			num,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+	setStabilization = function(value, callback) {
+		var packet = Sphero.commands.api.setHeading(
+			value,
+			{ resetTimeout: true }
+		);
+
+		connection.writeCharacteristic(OllieRobotControlService,
+			Roll,
+			packet,
+			callback
+		);
+	};
+
+
+
+	// ömer
+	startCalibration = function() {
+		this.setBackLED(127);
+		this.setStabilization(0);
+	};
+
+	finishCalibration = function() {
+		this.setBackLED(0);
+		this.setHeading(0);
+		this.setStabilization(1);
+	};
+
+	/**
+	 * Enables developer mode on the Ollie.
+	 *
+	 * This is accomplished via sending a special string to the Anti-DoS service,
+	 * setting TX power to 7, and telling the Sphero to wake up.
+	 *
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 * @publish
+	 */
+	devModeOn = function(callback) {
+		console.log("Putting Ollie into dev mode.");
+		console.log("Sending anti-DoS string.");
+
+		setAntiDos(function() {
+			console.log("Anti-DoS sent.");
+			console.log("Setting TX power to 7.");
+
+			setTXPower(7, function() {
+				console.log("TX power sent.");
+				console.log("Sending wake.");
+
+				wake(function(err, data) {
+					console.log("Wake sent.");
+					callback(err, data);
+				});
+			});
+		});
+	};
+
+	/**
+	 * Sends a special Anti-DoS string to the Ollie.
+	 *
+	 * Used when enabling developer mode
+	 *
+	 * @param {Function} callback function to call when done
+	 * @return {void}
+	 */
+	setAntiDos = function(callback) {
+		var str = "011i3";
+		var bytes = [];
+
+		for (var i = 0; i < str.length; ++i) {
+			bytes.push(str.charCodeAt(i));
+		}
+
+		connection.writeCharacteristic(OllieBLEService, AntiDos, bytes, callback);
+	};
+}

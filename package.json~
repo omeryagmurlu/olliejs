@@ -2,13 +2,16 @@
   "name": "olliejs",
   "version": "1.0.0",
   "description": "A javascript (node.js) API to control Ollie with Noble",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/omeryagmurlu/ollie.js.git"
+  },
+  "dependencies": {
+    "noble": "^1.1.0"
   },
   "keywords": [
     "Ollie",
