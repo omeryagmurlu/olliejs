@@ -1,0 +1,27 @@
+{
+  "name": "olliejs",
+  "version": "1.0.0",
+  "description": "A javascript (node.js) API to control Ollie with Noble",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omeryagmurlu/ollie.js.git"
+  },
+  "keywords": [
+    "Ollie",
+    "Orbotix",
+    "Sphero",
+    "API",
+    "Javascript"
+  ],
+  "author": "Ömer Yağmurlu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/omeryagmurlu/ollie.js/issues"
+  },
+  "homepage": "https://github.com/omeryagmurlu/ollie.js#readme"
+}
+
