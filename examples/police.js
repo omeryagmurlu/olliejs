@@ -39,7 +39,7 @@ var police = function(s, delay1, delay2) {
 var ollie = new (require('../lib/index.js'))("ef66143e996d") //enter your ollie's UUID.
 
 ollie.on("connect", function(){
-	police(ollie.driver, 25, 50);
+	police(ollie, 25, 50);
 });
 
 ollie.init()

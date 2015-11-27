@@ -6,25 +6,25 @@ ollie.once("connect", function(){
 	ollie.on('collision', function(data) {
 		console.log("Collision, Speed: " + data.Speed + "/255, Time in seconds since connection: " + data.Timestamp/1000 +"s.");
 		heading = Math.abs(heading-180);
-		ollie.driver.roll(40,heading,1);
+		ollie.roll(40,heading,1);
 	});
 
 	// default = speed threshold = 80 ; wait time = 800 ms;
-	ollie.driver.detectCollisions();
+	ollie.detectCollisions();
 
 	// speed threshold = 1 ; wait time = 10 ms; (useful for getting data easy way)
-	//ollie.driver.detectCollisions(1,1);
+	//ollie.detectCollisions(1,1);
 
 	// speed threshold = 30 ; wait time = 10 ms;
-	//ollie.driver.detectCollisions(30,1);
+	//ollie.detectCollisions(30,1);
 
 	// speed threshold = 30 ; wait time = 100 ms;
-	//ollie.driver.detectCollisions(30,10);
+	//ollie.detectCollisions(30,10);
 
 	// speed threshold = 255 ; wait time = 1000 ms;
-	//ollie.driver.detectCollisions(255,100);
+	//ollie.detectCollisions(255,100);
 
-	ollie.driver.roll(40,heading,1);
+	ollie.roll(40,heading,1);
 });
 
 ollie.init()
