@@ -1,6 +1,6 @@
 {
   "name": "olliejs",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A javascript (node.js) API to control Ollie with Noble",
   "main": "lib/index.js",
   "repository": {

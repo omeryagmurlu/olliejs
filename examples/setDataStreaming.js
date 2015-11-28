@@ -54,7 +54,6 @@ ollie.once("connect", function(){
 		// pcnt = 10 means stop after 10 data packets
 		pcnt: 0,
 	}
-	console.log(ollie)
 
 	ollie.setDataStreaming(['imu'], opts);
 });
