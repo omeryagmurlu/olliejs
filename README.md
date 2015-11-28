@@ -12,6 +12,6 @@ API is able get messages from Ollie, parse them (thank you alchemycs), send comm
 
 ##Missing things :(
 
-* Sync Messages
-
-Right now this API is only able to get Async messages which are defined in this file [Orbotix Communication](https://s3.amazonaws.com/docs.gosphero.com/api/Sphero_API_1.20.pdf). I've tried hard to get the Sync messages, but they didn't even pop as an unknown read on my screen. I will try to get them working, but the most needed datas (sensor data) are sent with async already, so this shouldn't be a big problem. 
+* ~~Sync Messages~~
+* appendOrbBasicFragment Function
+* Macros

@@ -10,6 +10,7 @@
   "dependencies": {
     "noble": "^1.1.0"
   },
+  "tonicExample": "var ollie = new (require('olliejs'))('OLLIEUUID');",
   "keywords": [
     "Ollie",
     "Orbotix",
