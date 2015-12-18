@@ -2,7 +2,7 @@ var ollie = new (require('../lib/index.js'))("ef66143e996d") //enter your ollie'
 
 ollie.once("connect", function(){
 	setInterval(function(){
-		ollie.setRGB(Math.floor(Math.random() * 100000));
+		ollie.setRandomColor();
 	},8);
 });
 
