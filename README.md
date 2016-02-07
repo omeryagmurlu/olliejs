@@ -1,5 +1,9 @@
 [![npm version](https://badge.fury.io/js/olliejs.svg)](https://badge.fury.io/js/olliejs)
 
+#Important
+
+This repo is old and won't get any updates or whatsoever. Use [this](https://github.com/orbotix/sphero.js)
+
 ###### Even More IMPORTANT
 
 I tried to port my ollie-controller project to sphero.js's new in development code but the interval of sending commands was huge, so I will keep updating this until they fix it. I also opened a new branch in controller's repository.
